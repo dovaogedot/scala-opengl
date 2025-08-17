@@ -2,7 +2,7 @@
 A project in which I learn **functional programming** and **graphics** by combining **Scala** and **OpenGL**
 
 ## Requirements
-```bash
+```
 $ cat /proc/version
 Linux version 6.6.87.2-microsoft-standard-WSL2
 

@@ -60,8 +60,6 @@ object Geometry {
             .groupBy(_._1)
             .map { case (attr, attrs) =>
                 val values = attrs.flatMap(_._2).toArray
-                // only prints first vertex
-                println(s"$attr: ${values.mkString(", ")}")
 
                 val buffer = MemoryUtil.memAllocFloat(values.length)
                 buffer.put(values).flip()
