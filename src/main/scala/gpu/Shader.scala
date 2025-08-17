@@ -1,0 +1,123 @@
+package gpu
+
+
+import scala.io.Source
+import scala.util.Try
+
+import org.lwjgl.glfw.*;
+import org.lwjgl.opengl.*;
+
+import org.lwjgl.glfw.GLFW.*;
+import org.lwjgl.opengl.GL11.*;
+import org.lwjgl.opengl.GL20.*;
+import org.lwjgl.system.MemoryUtil.*;
+
+
+case class Shader private (id: Int) {
+    def bind()    = glUseProgram(id)
+    def unbind()  = glUseProgram(0)
+    def cleanUp() = glDeleteProgram(id)
+}
+
+
+enum ShaderType(val glEnum: Int) {
+    case Vertex   extends ShaderType(GL_VERTEX_SHADER)
+    case Fragment extends ShaderType(GL_FRAGMENT_SHADER)
+}
+
+
+object Shader {
+
+    def apply(vertex: String, fragment: String): Either[String, Shader] = {
+        for
+            vertexSource <- readSource(vertex)
+            vertexId     <- createShader(vertexSource, ShaderType.Vertex)
+
+            fragmentSource <- readSource(fragment)
+            fragmentId     <- createShader(fragmentSource, ShaderType.Fragment)
+
+            programId <- createProgram(vertexId, fragmentId)
+        yield new Shader(programId)
+    }
+
+
+    def apply(): Either[String, Shader] = {
+        for
+            vertexId   <- createShader(defaultVertex, ShaderType.Vertex)
+            fragmentId <- createShader(defaultFragment, ShaderType.Fragment)
+            programId  <- createProgram(vertexId, fragmentId)
+        yield new Shader(programId)
+    }
+
+
+    def readSource(path: String): Either[String, String] = {
+        Try(Source.fromFile(path).mkString).fold(
+            err => Left(err.getMessage()),
+            succ => Right(succ)
+        )
+    }
+
+
+    def createProgram(vertexId: Int, fragmentId: Int): Either[String, Int] = {
+        val programId = glCreateProgram()
+
+        if programId == 0 then
+            Left("Failed to create a shader program")
+
+        glAttachShader(programId, vertexId)
+        glAttachShader(programId, fragmentId)
+
+        glLinkProgram(programId)
+
+        if glGetProgrami(programId, GL_LINK_STATUS) == 0 then
+            return Left("Failed to link shader program: " + glGetProgramInfoLog(programId))
+
+        glDetachShader(programId, vertexId)
+        glDetachShader(programId, fragmentId)
+
+        glValidateProgram(programId)
+
+        if glGetProgrami(programId, GL_VALIDATE_STATUS) == 0 then
+            return Left("Failed to validate shader program: " + glGetProgramInfoLog(programId))
+
+        Right(programId)
+    }
+
+
+    def createShader(source: String, shaderType: ShaderType): Either[String, Int] = {
+        val shaderId = glCreateShader(shaderType.glEnum)
+
+        glShaderSource(shaderId, source)
+        glCompileShader(shaderId)
+
+        if glGetShaderi(shaderId, GL_COMPILE_STATUS) == 0 then
+            Left("Failed to compile shader: " + glGetShaderInfoLog(shaderId))
+        else
+            Right(shaderId)
+    }
+
+
+    val defaultVertex = """#version 450
+          |in vec3 position;
+          |in vec3 color;
+          |
+          |out vec3 vColor;
+          |
+          |void main() {
+          |    gl_Position = vec4(position, 1.0);
+          |    vColor = color;
+          |}
+        """.stripMargin('|')
+
+
+    val defaultFragment = """#version 450
+          |in vec3 vColor;
+          |
+          |out vec4 fragColor;
+          |
+          |void main() {
+          |    fragColor = vec4(vColor, 1.0);
+          |}
+        """.stripMargin('|')
+
+}
