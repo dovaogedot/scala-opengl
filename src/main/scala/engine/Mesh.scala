@@ -5,32 +5,17 @@ import engine.Component
 import gpu.Geometry
 import gpu.Shader
 import gpu.Renderer
+import org.joml.Vector2f
 
 
-case class Mesh private (geometry: Geometry, shader: Shader) extends Component {
+class MeshComponent(
+    var geometry: Geometry,
+    var shader: Shader,
+    var renderer: Renderer
+) extends Component {
 
-    def update(deltaTime: Float) = {
-        render()
-    }
-
-
-    def render() = {
-        shader.bind()
-        geometry.bind()
-
-        Renderer.draw(geometry.vertexCount)
-
-        geometry.unbind()
-        shader.unbind()
-    }
-
-}
-
-
-object Mesh {
-
-    def apply(geometry: Geometry, shader: Shader): Mesh = {
-        new Mesh(geometry, shader)
+    def update(actor: Actor, deltaTime: Double) = {
+        renderer.draw(geometry, shader)
     }
 
 }

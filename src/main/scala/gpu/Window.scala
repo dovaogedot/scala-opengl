@@ -11,16 +11,16 @@ import org.lwjgl.system.MemoryUtil.*;
 
 class Window private (id: Long) {
 
-    def loop(frame: Float => Unit) = {
-        var lastTime    = System.currentTimeMillis() / 1000f
-        var currentTime = 0f
-        var deltaTime   = 0f
+    def loop(frame: Double => Unit) = {
+        var lastTime    = System.nanoTime() / 1e9
+        var currentTime = 0d
+        var deltaTime   = 0d
 
         while !glfwWindowShouldClose(id) do
             glClear(GL_COLOR_BUFFER_BIT)
             glfwPollEvents()
 
-            currentTime = System.currentTimeMillis() / 1000f
+            currentTime = System.nanoTime() / 1e9
             deltaTime = currentTime - lastTime
             lastTime = currentTime
 
@@ -42,6 +42,9 @@ object Window {
 
         if !glfwInit() then
             return Left("Failed to initialize GLFW")
+
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3)
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3)
 
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE)
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE)

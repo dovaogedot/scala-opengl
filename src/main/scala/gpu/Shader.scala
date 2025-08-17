@@ -11,12 +11,33 @@ import org.lwjgl.glfw.GLFW.*;
 import org.lwjgl.opengl.GL11.*;
 import org.lwjgl.opengl.GL20.*;
 import org.lwjgl.system.MemoryUtil.*;
+import org.lwjgl.system.MemoryStack
+import scala.util.Using
 
 
-case class Shader private (id: Int) {
-    def bind()    = glUseProgram(id)
+case class Shader private (programId: Int) {
+
+    def setUniform[T](name: String, value: T)(using uniform: Uniform[T]): Shader = {
+        val location = glGetUniformLocation(programId, name)
+        val stack    = MemoryStack.stackPush()
+
+        try
+            val buffer = stack.mallocFloat(uniform.size(value))
+
+            uniform.put(value, buffer)
+            buffer.flip()
+            uniform.upload(location, buffer)
+
+        finally
+            stack.pop()
+
+        this
+    }
+
+
+    def bind()    = glUseProgram(programId)
     def unbind()  = glUseProgram(0)
-    def cleanUp() = glDeleteProgram(id)
+    def cleanUp() = glDeleteProgram(programId)
 }
 
 
@@ -97,27 +118,7 @@ object Shader {
     }
 
 
-    val defaultVertex = """#version 450
-          |in vec3 position;
-          |in vec3 color;
-          |
-          |out vec3 vColor;
-          |
-          |void main() {
-          |    gl_Position = vec4(position, 1.0);
-          |    vColor = color;
-          |}
-        """.stripMargin('|')
-
-
-    val defaultFragment = """#version 450
-          |in vec3 vColor;
-          |
-          |out vec4 fragColor;
-          |
-          |void main() {
-          |    fragColor = vec4(vColor, 1.0);
-          |}
-        """.stripMargin('|')
+    val defaultVertex   = Using(Source.fromResource("shaders/default.vert"))(_.mkString).get
+    val defaultFragment = Using(Source.fromResource("shaders/default.frag"))(_.mkString).get
 
 }

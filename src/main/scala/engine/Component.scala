@@ -2,5 +2,5 @@ package engine
 
 
 trait Component {
-    def update(deltaTime: Float): Unit
+    def update(actor: Actor, deltaTime: Double): Unit
 }

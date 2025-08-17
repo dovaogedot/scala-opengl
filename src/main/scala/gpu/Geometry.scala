@@ -44,9 +44,9 @@ case class Geometry private (
 
 object Geometry {
 
-    def apply(vertices: List[Vertex], indices: List[Int], programId: Int): Option[Geometry] = {
+    def apply(vertices: List[Vertex], indices: List[Int], programId: Int): Either[String, Geometry] = {
         if vertices.length < 1 || indices.length < 1 then
-            None
+            Left("Failed to create geometry. Check vertices and indices.")
 
         // VAO
         val vao = glGenVertexArrays()
@@ -89,7 +89,7 @@ object Geometry {
 
         MemoryUtil.memFree(buffer)
 
-        Some(new Geometry(vao, ebo, vbos, indices.length))
+        Right(new Geometry(vao, ebo, vbos, indices.length))
     }
 
 }
