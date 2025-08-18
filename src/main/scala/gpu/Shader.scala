@@ -2,17 +2,32 @@ package gpu
 
 
 import scala.io.Source
-import scala.util.Try
-
-import org.lwjgl.glfw.*;
-import org.lwjgl.opengl.*;
-
-import org.lwjgl.glfw.GLFW.*;
-import org.lwjgl.opengl.GL11.*;
-import org.lwjgl.opengl.GL20.*;
-import org.lwjgl.system.MemoryUtil.*;
-import org.lwjgl.system.MemoryStack
 import scala.util.Using
+
+import org.lwjgl.system.MemoryStack
+import org.lwjgl.opengl.GL11.{glGetError, GL_NO_ERROR};
+import org.lwjgl.opengl.GL20.{
+    glCreateProgram,
+    glLinkProgram,
+    glValidateProgram,
+    glUseProgram,
+    glDeleteProgram,
+    GL_VERTEX_SHADER,
+    GL_FRAGMENT_SHADER,
+    glCreateShader,
+    glShaderSource,
+    glCompileShader,
+    glAttachShader,
+    glDetachShader,
+    GL_LINK_STATUS,
+    GL_COMPILE_STATUS,
+    GL_VALIDATE_STATUS,
+    glGetShaderi,
+    glGetShaderInfoLog,
+    glGetProgrami,
+    glGetProgramInfoLog,
+    glGetUniformLocation
+};
 
 
 case class Shader private (programId: Int) {
@@ -42,11 +57,8 @@ case class Shader private (programId: Int) {
 
 
 enum ShaderType(val glEnum: Int) {
-
-    case Vertex extends ShaderType(GL_VERTEX_SHADER)
-
+    case Vertex   extends ShaderType(GL_VERTEX_SHADER)
     case Fragment extends ShaderType(GL_FRAGMENT_SHADER)
-
 }
 
 
@@ -93,6 +105,10 @@ object Shader {
         if glGetProgrami(programId, GL_VALIDATE_STATUS) == 0 then
             return Left("Failed to validate shader program: " + glGetProgramInfoLog(programId))
 
+        val err = glGetError()
+        if err != GL_NO_ERROR then
+            println(s"Error after shader program creation: $err")
+
         Right(programId)
     }
 
@@ -104,16 +120,19 @@ object Shader {
         glCompileShader(shaderId)
 
         if glGetShaderi(shaderId, GL_COMPILE_STATUS) == 0 then
-            Left("Failed to compile shader: " + glGetShaderInfoLog(shaderId))
-        else
-            Right(shaderId)
+            return Left("Failed to compile shader: " + glGetShaderInfoLog(shaderId))
+
+        val err = glGetError()
+        if err != GL_NO_ERROR then
+            println(s"Error after shader creation: $err")
+
+        Right(shaderId)
     }
 
 
-    val defaultVertex =
-        Using(
-            Source.fromResource("shaders/default.vert")
-        )(_.mkString).toEither.left.map(_.getMessage())
+    val defaultVertex = Using(
+        Source.fromResource("shaders/default.vert")
+    )(_.mkString).toEither.left.map(_.getMessage())
 
 
     val defaultFragment = Using(

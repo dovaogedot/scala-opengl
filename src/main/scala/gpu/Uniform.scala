@@ -2,8 +2,8 @@ package gpu
 
 
 import java.nio.FloatBuffer
-import org.lwjgl.opengl.GL20.*
-import org.joml.*
+import org.lwjgl.opengl.GL20.{glUniform1fv, glUniform2fv, glUniform3fv, glUniformMatrix4fv}
+import org.joml.{Vector2f, Vector3f, Matrix4f}
 
 
 trait Uniform[T] {

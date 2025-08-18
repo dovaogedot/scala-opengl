@@ -2,10 +2,23 @@ package gpu
 
 
 import org.lwjgl.system.MemoryUtil
-import org.lwjgl.opengl.GL11.*
-import org.lwjgl.opengl.GL15.*
-import org.lwjgl.opengl.GL20.*
-import org.lwjgl.opengl.GL30.*
+import org.lwjgl.opengl.GL11.GL_FLOAT
+import org.lwjgl.opengl.GL15.{
+    glGenBuffers,
+    glBindBuffer,
+    glBufferData,
+    glDeleteBuffers,
+    GL_ARRAY_BUFFER,
+    GL_ELEMENT_ARRAY_BUFFER,
+    GL_DYNAMIC_DRAW
+}
+import org.lwjgl.opengl.GL20.{
+    glGetAttribLocation,
+    glVertexAttribPointer,
+    glEnableVertexAttribArray,
+    glDisableVertexAttribArray
+}
+import org.lwjgl.opengl.GL30.{glGenVertexArrays, glBindVertexArray, glDeleteVertexArrays}
 
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.ListBuffer
@@ -72,14 +85,12 @@ object Geometry {
 
                 val components = componentsPerAttr.getOrElse(attr, 0)
                 val location   = glGetAttribLocation(programId, attr)
-                println(s"$attr: $components")
 
-                val err = glGetError()
-                if err != GL_NO_ERROR then
-                    println(s"$attr: OpenGL error: $err")
-
-                glVertexAttribPointer(location, components, GL_FLOAT, false, 0, 0)
-                glEnableVertexAttribArray(location)
+                if location != -1 then
+                    glVertexAttribPointer(location, components, GL_FLOAT, false, 0, 0)
+                    glEnableVertexAttribArray(location)
+                else
+                    println(s"WARN: Failed to set location for attribute $attr")
 
                 vbo
             }.to(List)

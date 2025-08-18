@@ -4,8 +4,7 @@ package systems
 import components.Mesh
 import engine.Game
 
-import org.lwjgl.opengl.GL11.*
-import scala.reflect.ClassTag
+import org.lwjgl.opengl.GL11.{glDrawElements, GL_TRIANGLES, GL_UNSIGNED_INT}
 
 
 object RenderSystem extends System:

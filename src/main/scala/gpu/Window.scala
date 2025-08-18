@@ -1,58 +1,63 @@
 package gpu
 
 
-import org.lwjgl.glfw.*;
-import org.lwjgl.opengl.*;
+import org.lwjgl.glfw.{GLFWErrorCallback}
+import org.lwjgl.opengl.GL
 
-import org.lwjgl.glfw.GLFW.*;
-import org.lwjgl.opengl.GL11.*;
-import org.lwjgl.system.MemoryUtil.*;
+import org.lwjgl.glfw.GLFW.{
+    glfwInit,
+    glfwWindowHint,
+    glfwCreateWindow,
+    glfwDestroyWindow,
+    glfwTerminate,
+    glfwPollEvents,
+    glfwSwapBuffers,
+    glfwSetKeyCallback,
+    glfwMakeContextCurrent,
+    glfwSwapInterval,
+    glfwShowWindow,
+    glfwWindowShouldClose,
+    glfwSetWindowShouldClose,
+    GLFW_CONTEXT_VERSION_MAJOR,
+    GLFW_CONTEXT_VERSION_MINOR,
+    GLFW_VISIBLE,
+    GLFW_RESIZABLE,
+    GLFW_FALSE,
+    GLFW_TRUE,
+    GLFW_KEY_ESCAPE,
+    GLFW_RELEASE,
+    *
+}
+import org.lwjgl.opengl.GL11.{glClear, glClearColor, glViewport, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT}
+import org.lwjgl.system.MemoryUtil.NULL
 
 
 case class Window private (id: Long) {
 
     def loop[T](initial: T, frame: (T, Double) => T): T = {
-        var state    = initial
-        var lastTime = System.nanoTime() / 1e9
-
-        while (!glfwWindowShouldClose(id)) {
-            glClear(GL_COLOR_BUFFER_BIT)
-            glfwPollEvents()
-            glfwSwapBuffers(id)
-
-            val currentTime = System.nanoTime() / 1e9
-            val deltaTime   = currentTime - lastTime
-
-            state = frame(state, deltaTime)
-            lastTime = currentTime
-        }
-
+        val finalState = step(initial, frame, System.nanoTime() / 1e9)
         glfwDestroyWindow(id)
         glfwTerminate()
-        state
+        finalState
     }
 
-    // def loop[T](initial: T, frame: (T, Double) => T): T = {
-    //     val finalState = step(initial, frame, System.nanoTime() / 1e9)
-    //     glfwDestroyWindow(id)
-    //     glfwTerminate()
-    //     finalState
-    // }
 
-    // @annotation.tailrec
-    // private def step[T](state: T, frame: (T, Double) => T, lastTime: Double): T = {
-    //     if glfwWindowShouldClose(id) then
-    //         return state
+    @annotation.tailrec
+    private def step[T](state: T, frame: (T, Double) => T, lastTime: Double): T = {
+        if glfwWindowShouldClose(id) then
+            return state
 
-    //     glClear(GL_COLOR_BUFFER_BIT)
-    //     glfwPollEvents()
-    //     glfwSwapBuffers(id)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glfwPollEvents()
 
-    //     val currentTime = System.nanoTime() / 1e9
-    //     val deltaTime   = currentTime - lastTime
+        val currentTime = System.nanoTime() / 1e9
+        val deltaTime   = currentTime - lastTime
 
-    //     step(frame(state, deltaTime), frame, currentTime)
-    // }
+        val nextState = frame(state, deltaTime)
+
+        glfwSwapBuffers(id)
+        step(nextState, frame, currentTime)
+    }
 
 }
 
@@ -80,8 +85,14 @@ object Window {
             windowId,
             (w, key, scancode, action, mods) =>
                 if key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE then
-                    glfwSetWindowShouldClose(w, true); // We will detect this in the rendering loop
+                    glfwSetWindowShouldClose(w, true);
         );
+
+        glfwSetFramebufferSizeCallback(
+            windowId,
+            (w, width, height) =>
+                glViewport(0, 0, width, height)
+        )
 
         glfwMakeContextCurrent(windowId)
         glfwSwapInterval(1)

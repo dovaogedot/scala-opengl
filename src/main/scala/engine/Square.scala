@@ -4,27 +4,22 @@ package engine
 import gpu.Vertex
 import gpu.Shader
 import gpu.Geometry
-import gpu.Renderer
 
 import components.Component
 import components.Mesh
 import components.MyComponent
-import engine.EntityId
 import systems.RenderSystem
 
 
-object Triangle {
+object Square {
 
     def game(): Either[String, Game] = {
-        for
-            triangle <- triangle()
-        yield
-            val game = Game(Map.empty, List(RenderSystem))
-            triangle.foldLeft(game)((acc, c) => acc.upsert(0, c))
+        val game = Game(Map.empty, List(RenderSystem))
+        square().map(_.foldLeft(game)((acc, c) => acc.upsert(0, c)))
     }
 
 
-    def triangle(): Either[String, List[Component]] = {
+    def square(): Either[String, List[Component]] = {
         val vertices = List(
             Vertex(-0.5f, -0.5f, 0f).set("color", 1f, 0f, 0f),
             Vertex(-0.5f, 0.5f, 0f).set("color", 0f, 1f, 0f),

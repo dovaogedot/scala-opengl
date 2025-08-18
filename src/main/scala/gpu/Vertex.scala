@@ -1,7 +1,5 @@
 package gpu
 
-
-import org.joml.{Vector2f, Vector3f}
 import scala.collection.mutable.LinkedHashMap
 
 
