@@ -42,20 +42,20 @@ case class Shader private (programId: Int) {
 
 
 enum ShaderType(val glEnum: Int) {
-    case Vertex   extends ShaderType(GL_VERTEX_SHADER)
+
+    case Vertex extends ShaderType(GL_VERTEX_SHADER)
+
     case Fragment extends ShaderType(GL_FRAGMENT_SHADER)
+
 }
 
 
 object Shader {
 
-    def apply(vertex: String, fragment: String): Either[String, Shader] = {
+    def apply(vertexSource: String, fragmentSource: String): Either[String, Shader] = {
         for
-            vertexSource <- readSource(vertex)
-            vertexId     <- createShader(vertexSource, ShaderType.Vertex)
-
-            fragmentSource <- readSource(fragment)
-            fragmentId     <- createShader(fragmentSource, ShaderType.Fragment)
+            vertexId   <- createShader(vertexSource, ShaderType.Vertex)
+            fragmentId <- createShader(fragmentSource, ShaderType.Fragment)
 
             programId <- createProgram(vertexId, fragmentId)
         yield new Shader(programId)
@@ -64,18 +64,10 @@ object Shader {
 
     def apply(): Either[String, Shader] = {
         for
-            vertexId   <- createShader(defaultVertex, ShaderType.Vertex)
-            fragmentId <- createShader(defaultFragment, ShaderType.Fragment)
-            programId  <- createProgram(vertexId, fragmentId)
-        yield new Shader(programId)
-    }
-
-
-    def readSource(path: String): Either[String, String] = {
-        Try(Source.fromFile(path).mkString).fold(
-            err => Left(err.getMessage()),
-            succ => Right(succ)
-        )
+            vertexSource   <- defaultVertex
+            fragmentSource <- defaultFragment
+            shader         <- Shader(vertexSource, fragmentSource)
+        yield shader
     }
 
 
@@ -118,7 +110,14 @@ object Shader {
     }
 
 
-    val defaultVertex   = Using(Source.fromResource("shaders/default.vert"))(_.mkString).get
-    val defaultFragment = Using(Source.fromResource("shaders/default.frag"))(_.mkString).get
+    val defaultVertex =
+        Using(
+            Source.fromResource("shaders/default.vert")
+        )(_.mkString).toEither.left.map(_.getMessage())
+
+
+    val defaultFragment = Using(
+        Source.fromResource("shaders/default.frag")
+    )(_.mkString).toEither.left.map(_.getMessage())
 
 }

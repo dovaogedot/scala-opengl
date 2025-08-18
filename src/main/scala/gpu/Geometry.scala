@@ -72,6 +72,12 @@ object Geometry {
 
                 val components = componentsPerAttr.getOrElse(attr, 0)
                 val location   = glGetAttribLocation(programId, attr)
+                println(s"$attr: $components")
+
+                val err = glGetError()
+                if err != GL_NO_ERROR then
+                    println(s"$attr: OpenGL error: $err")
+
                 glVertexAttribPointer(location, components, GL_FLOAT, false, 0, 0)
                 glEnableVertexAttribArray(location)
 
@@ -88,7 +94,6 @@ object Geometry {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer, GL_DYNAMIC_DRAW)
 
         MemoryUtil.memFree(buffer)
-
         Right(new Geometry(vao, ebo, vbos, indices.length))
     }
 

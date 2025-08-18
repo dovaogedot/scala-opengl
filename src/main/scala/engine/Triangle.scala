@@ -1,13 +1,16 @@
-package game
+package engine
 
 
-import engine.Actor
 import gpu.Vertex
 import gpu.Shader
 import gpu.Geometry
 import gpu.Renderer
-import engine.MeshComponent
-import engine.Game
+
+import components.Component
+import components.Mesh
+import components.MyComponent
+import engine.EntityId
+import systems.RenderSystem
 
 
 object Triangle {
@@ -15,11 +18,13 @@ object Triangle {
     def game(): Either[String, Game] = {
         for
             triangle <- triangle()
-        yield Game().addActor(triangle)
+        yield
+            val game = Game(Map.empty, List(RenderSystem))
+            triangle.foldLeft(game)((acc, c) => acc.upsert(0, c))
     }
 
 
-    def triangle(): Either[String, Actor] = {
+    def triangle(): Either[String, List[Component]] = {
         val vertices = List(
             Vertex(-0.5f, -0.5f, 0f).set("color", 1f, 0f, 0f),
             Vertex(-0.5f, 0.5f, 0f).set("color", 0f, 1f, 0f),
@@ -33,13 +38,9 @@ object Triangle {
             shader   <- Shader()
             geometry <- Geometry(vertices, indices, shader.programId)
         yield
-            var renderer      = Renderer()
-            val meshComponent = MeshComponent(geometry, shader, renderer)
-            val myComponent   = MyComponent()
-
-            Actor()
-                .addComponent(meshComponent)
-                .addComponent(myComponent)
+            val mesh        = Mesh(geometry, shader)
+            val myComponent = MyComponent(System.nanoTime() / 1e9, 0, 0)
+            List(mesh, myComponent)
     }
 
 }

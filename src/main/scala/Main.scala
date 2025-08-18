@@ -1,11 +1,17 @@
 import gpu.Window
 import gpu.Vertex
-import engine.Actor
 import gpu.Geometry
 import gpu.Shader
 import org.joml.Vector2f
 import gpu.Renderer
-import game.Triangle
+import engine.Triangle
+import engine.Game
+import scala.reflect.ClassTag
+
+
+trait A
+case class Mesh() extends A
+object Mesh       extends A
 
 
 object Main {
@@ -15,7 +21,7 @@ object Main {
             for
                 window <- Window(800, 480, "Game")
                 game   <- Triangle.game()
-            yield window.loop(game.frame)
+            yield window.loop(game, Game.step)
 
         result.fold(
             left => left,

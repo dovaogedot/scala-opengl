@@ -9,28 +9,50 @@ import org.lwjgl.opengl.GL11.*;
 import org.lwjgl.system.MemoryUtil.*;
 
 
-class Window private (id: Long) {
+case class Window private (id: Long) {
 
-    def loop(frame: Double => Unit) = {
-        var lastTime    = System.nanoTime() / 1e9
-        var currentTime = 0d
-        var deltaTime   = 0d
+    def loop[T](initial: T, frame: (T, Double) => T): T = {
+        var state    = initial
+        var lastTime = System.nanoTime() / 1e9
 
-        while !glfwWindowShouldClose(id) do
+        while (!glfwWindowShouldClose(id)) {
             glClear(GL_COLOR_BUFFER_BIT)
             glfwPollEvents()
-
-            currentTime = System.nanoTime() / 1e9
-            deltaTime = currentTime - lastTime
-            lastTime = currentTime
-
-            frame(deltaTime)
-
             glfwSwapBuffers(id)
-        end while
 
+            val currentTime = System.nanoTime() / 1e9
+            val deltaTime   = currentTime - lastTime
+
+            state = frame(state, deltaTime)
+            lastTime = currentTime
+        }
+
+        glfwDestroyWindow(id)
         glfwTerminate()
+        state
     }
+
+    // def loop[T](initial: T, frame: (T, Double) => T): T = {
+    //     val finalState = step(initial, frame, System.nanoTime() / 1e9)
+    //     glfwDestroyWindow(id)
+    //     glfwTerminate()
+    //     finalState
+    // }
+
+    // @annotation.tailrec
+    // private def step[T](state: T, frame: (T, Double) => T, lastTime: Double): T = {
+    //     if glfwWindowShouldClose(id) then
+    //         return state
+
+    //     glClear(GL_COLOR_BUFFER_BIT)
+    //     glfwPollEvents()
+    //     glfwSwapBuffers(id)
+
+    //     val currentTime = System.nanoTime() / 1e9
+    //     val deltaTime   = currentTime - lastTime
+
+    //     step(frame(state, deltaTime), frame, currentTime)
+    // }
 
 }
 
@@ -58,7 +80,6 @@ object Window {
             windowId,
             (w, key, scancode, action, mods) =>
                 if key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE then
-                    print("Closing")
                     glfwSetWindowShouldClose(w, true); // We will detect this in the rendering loop
         );
 
@@ -69,6 +90,7 @@ object Window {
 
         GL.createCapabilities()
         glClearColor(0.2f, 0.2f, 0.2f, 1f)
+        glViewport(0, 0, width, height)
 
         return Right(new Window(windowId))
     }

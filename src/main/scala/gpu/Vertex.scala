@@ -5,7 +5,7 @@ import org.joml.{Vector2f, Vector3f}
 import scala.collection.mutable.LinkedHashMap
 
 
-case class Vertex(attributes: LinkedHashMap[String, Array[Float]]) {
+case class Vertex private (attributes: LinkedHashMap[String, Array[Float]]) {
 
     def set(attr: String, values: Float*): Vertex = {
         attributes.update(attr, values.toArray)
